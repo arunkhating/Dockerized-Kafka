@@ -27,4 +27,14 @@ Integrated UI: Includes kafka-ui pre-configured to monitor the secure SASL_SSL s
     'ssl.ca.location': 'path/to/ca.pem',
     'ssl.endpoint.identification.algorithm': 'none' # Required for IP-based access
 }
-🖥 MonitoringAccess the Kafka UI at http://localhost:8080.Default View: Configured to use the admin credentials.Tip: If you don't see messages, ensure your Isolation Level is set to Read Uncommitted if you are experimenting with transactions.⚠️ TroubleshootingAPIVERSION_QUERY Error: Ensure you are matching the right protocol to the right port (don't send Plaintext to 9095).Coordinator Load Error: This often occurs in single-node clusters when Transactions are enabled. Set ENABLE_KAFKA_TRANSACTIONS=false for better stability on small deployments.Message Size: Ensure topic max.message.bytes is not set too low (e.g., avoid the common 19-byte mistake).
+🖥 MonitoringAccess the Kafka UI at http://localhost:8080.Default View: Configured to use the admin credentials.
+
+Tip: If you don't see messages, ensure your Isolation Level is set to Read Uncommitted if you are experimenting with transactions.
+
+⚠️ TroubleshootingAPIVERSION_QUERY Error: Ensure you are matching the right protocol to the right port (don't send Plaintext to 9095).
+
+Coordinator Load Error: This often occurs in single-node clusters when Transactions are enabled. 
+
+Set ENABLE_KAFKA_TRANSACTIONS=false for better stability on small deployments.
+
+Message Size: Ensure topic max.message.bytes is not set too low (e.g., avoid the common 19-byte mistake).
