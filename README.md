@@ -18,7 +18,10 @@ Integrated UI: Includes kafka-ui pre-configured to monitor the secure SASL_SSL s
     user_client="client-secret";
 };
 3. DeployBashdocker-compose up -d
-🔐 Connection Guide for DevelopersPort Mapping SummaryPortProtocolAuthDescription9092PLAINTEXTNoneDevelopment / Debugging only.9094SSLCA CertEncryption only.9095SASL_SSLCA + LoginProduction standard.Python Client Configuration (confluent-kafka)To connect securely to the HIPAA data topics, use the following configuration:Pythonconf = {
+
+🔐 Connection Guide for DevelopersPort Mapping SummaryPortProtocolAuthDescription9092PLAINTEXTNoneDevelopment / Debugging only.9094SSLCA CertEncryption only.9095SASL_SSLCA + LoginProduction standard.
+
+Python Client Configuration (confluent-kafka)To connect securely to the HIPAA data topics, use the following configuration:Pythonconf = {
     'bootstrap.servers': 'YOUR_SERVER_IP:9095',
     'security.protocol': 'SASL_SSL',
     'sasl.mechanism': 'PLAIN',
@@ -27,6 +30,7 @@ Integrated UI: Includes kafka-ui pre-configured to monitor the secure SASL_SSL s
     'ssl.ca.location': 'path/to/ca.pem',
     'ssl.endpoint.identification.algorithm': 'none' # Required for IP-based access
 }
+
 🖥 MonitoringAccess the Kafka UI at http://localhost:8080.Default View: Configured to use the admin credentials.
 
 Tip: If you don't see messages, ensure your Isolation Level is set to Read Uncommitted if you are experimenting with transactions.
