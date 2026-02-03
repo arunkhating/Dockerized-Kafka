@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "9094:9094"
+      - "9095:9095"
+    volumes:
+      - ./kafka-ssl:/etc/kafka/secrets
+      - ./kafka-ssl/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
+    environment:
+      # --- KRAFT SPECIFIC CONFIG ---
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      # Generates a static cluster ID for simplicity
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk' 
+
+      # --- LISTENERS ---
+      # 9093 is now used for the Controller (Internal KRaft communication)
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,INTERNAL://0.0.0.0:9094,SASL_SSL://0.0.0.0:9095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://10.0.1.118:9092,INTERNAL://10.0.1.118:9094,SASL_SSL://10.0.1.118:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:SSL,INTERNAL:SSL,PLAINTEXT:PLAINTEXT,SASL_SSL:SASL_SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      # --- SASL & SECURITY ---
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
+
+      # --- SSL CONFIG ---
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.keystore.p12
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.truststore.p12
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.keystore.p12
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.truststore.p12
+      KAFKA_SSL_KEYSTORE_TYPE: PKCS12
+      KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
+      KAFKA_SSL_KEYSTORE_PASSWORD: changeit
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: changeit
+      KAFKA_SSL_KEY_PASSWORD: changeit
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_SSL_CLIENT_AUTH: none
+
+      # Required by Confluent Docker logic
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka_keystore_creds
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka_truststore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: kafka_key_creds
+
+      # --- CONTROLLER SSL SETTINGS (Required for KRaft) ---
+      KAFKA_CONTROLLER_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.keystore.p12
+      KAFKA_CONTROLLER_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.truststore.p12
+      KAFKA_CONTROLLER_SSL_KEYSTORE_PASSWORD: changeit
+      KAFKA_CONTROLLER_SSL_TRUSTSTORE_PASSWORD: changeit
+      KAFKA_CONTROLLER_SSL_KEY_PASSWORD: changeit
+      KAFKA_CONTROLLER_SSL_KEYSTORE_TYPE: PKCS12
+      KAFKA_CONTROLLER_SSL_TRUSTSTORE_TYPE: PKCS12
+
+      # --- REPLICATION FACTORS (Single Node) ---
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    volumes:
+      - ./kafka-ssl:/certs
+    environment:
+      #KAFKA_CLUSTERS_0_NAME: secure-kafka
+        #KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9094
+        #KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+        #KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /certs/kafka.truststore.p12
+        #KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: changeit
+        #KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: PKCS12
+        #KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      
+      KAFKA_CLUSTERS_0_NAME: secure-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9095
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: PLAIN
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin-secret";'
+      
+      # SSL Truststore Settings
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /certs/kafka.truststore.p12
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: changeit
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: PKCS12
+      
+      # Crucial: Disable hostname verification since we're using an internal Docker name/IP
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
